@@ -5,15 +5,19 @@ from torchvision import models
 import trainer
 from utils import ARGS
 
-num_classes = 90
 ResNet = models.resnet18
 
 USE_SAVED_MODEL = False
-SAVED_MODEL_PATH = 'checkpoints/checkpoint-pretrained_resnet_coco_focalloss_losssum-epoch35.pth'
+SAVED_MODEL_PATH = 'checkpoints/checkpoint-pretrained_resnet_coco_focalloss_epochplus50-epoch50.pth'
 
 # args = ARGS(epochs=15, batch_size=16, lr=0.001, inp_size=360, use_cuda=True, val_every=2000, save_at_end=True, save_freq=5, step_size=10, gamma=0.1)
-args = ARGS(epochs=50, batch_size=8, lr=0.00001, inp_size=360, use_cuda=True, val_every=2000, save_at_end=True, save_freq=5, step_size=40, gamma=0.1, test_batch_size=10)
-
+args = ARGS(epochs=50, batch_size=8, lr=0.00001, inp_size=360, use_cuda=True, 
+            val_every=2000, save_at_end=True, save_freq=5, step_size=40, gamma=0.1, 
+            test_batch_size=9, indoor_only=False)
+if args.indoor_only:
+    num_classes = 14
+else:
+    num_classes = 90
 
 if USE_SAVED_MODEL == False : 
     model = ResNet(pretrained=True)

@@ -125,8 +125,11 @@ class CocoDataset(torch.utils.data.Dataset):
         img_id = self.ids[index]
         # List: get annotation id from coco
         ann_ids = coco.getAnnIds(imgIds=img_id)
+        # ann_ids = coco.getAnnIds(imgIds=img_id, catIds=coco.getCatIds(supNms=["indoor", "kitchen"]))
+        # print(ann_ids)
         # Dictionary: target coco_annotation file for an image
         coco_annotation = coco.loadAnns(ann_ids)
+        # print()
         # path for input image
         path = coco.loadImgs(img_id)[0]['file_name']
         # open the input image
@@ -151,6 +154,7 @@ class CocoDataset(torch.utils.data.Dataset):
             ymax = ymin + coco_annotation[i]['bbox'][3]
             boxes.append([xmin, ymin, xmax, ymax])
             category_ids.append(coco_annotation[i]['category_id'])
+        # print(category_ids)
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(category_ids)
         # Tensorise img_id
@@ -160,9 +164,11 @@ class CocoDataset(torch.utils.data.Dataset):
         for i in range(num_objs):
             areas.append(coco_annotation[i]['area'])
         areas = torch.as_tensor(areas, dtype=torch.float32)
+
         # Iscrowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
 
+        # print(len(category_ids))
         # Choose box to black out
         if len(category_ids) != 0 :
             box_id = int(torch.rand(1) * len(category_ids))
@@ -208,7 +214,7 @@ class CocoDataset(torch.utils.data.Dataset):
     def class_to_label(self, ids) :
 
         labels_list = []
-
+        # print(self.category_map)
         for id in ids : 
             labels_list.append(self.category_map[id+1])
         
