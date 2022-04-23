@@ -132,7 +132,8 @@ def eval_dataset_map(model, device, test_loader):
             pred_sample = sig(model(data))
             pred_sample = pred_sample.cpu()
             gt_sample = target
-            valid_sample = torch.ones(target.shape[0])
+            # print("Target shape is: ", target.shape)
+            valid_sample = torch.ones(target.shape[1])
             gt.append(gt_sample)
             pred.append(pred_sample)
             valid.append(valid_sample)
