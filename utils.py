@@ -124,7 +124,7 @@ def eval_dataset_map(model, device, test_loader):
     sig = torch.nn.Sigmoid()
     with torch.no_grad():
         gt, pred, valid = [],[],[]
-        for data, target in test_loader:
+        for data, target, _ in test_loader:
             # TODO Q1.3: insert your code here
             data = data.to(device)
             pred_sample = sig(model(data))

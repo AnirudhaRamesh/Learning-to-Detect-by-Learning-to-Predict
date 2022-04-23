@@ -62,8 +62,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
     # test_loader = utils.get_data_loader(
     #     'voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
 
-    train_dataset = CocoDataset('/mnt/aidtr/external/coco/train2017', '/mnt/aidtr/external/coco/annotations/instances_train2017.json', args.inp_size)
-    val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', '/mnt/aidtr/external/coco/annotations/instances_val2017.json', args.inp_size)
+    train_dataset = CocoDataset('../coco/train2017', '../coco/annotations/instances_train2017.json', args.inp_size)
+    val_dataset = CocoDataset('../coco/val2017', '../coco/annotations/instances_val2017.json', args.inp_size)
 
     bce_loss = torch.nn.BCEWithLogitsLoss()
 
@@ -143,7 +143,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
 def test(args, model, model_name='model', log_wandb=False):
 
-    val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', '/mnt/aidtr/external/coco/annotations/instances_val2017.json', args.inp_size)
+    val_dataset = CocoDataset('../coco/val2017', '../coco/annotations/instances_val2017.json', args.inp_size)
     test_loader = torch.utils.data.DataLoader(val_dataset,
                                             batch_size=args.test_batch_size,
                                             shuffle=False,
