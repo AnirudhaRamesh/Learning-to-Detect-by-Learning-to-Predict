@@ -47,6 +47,8 @@ class ARGS(object):
     use_cuda = False
     # input size
     inp_size = 224
+    # indoor only flag implies 14 class classification
+    indoor_only=False
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
