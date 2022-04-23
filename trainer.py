@@ -12,6 +12,10 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 
+import torchvision.transforms as transforms
+
+import wandb
+
 class FocalLoss(nn.modules.loss._WeightedLoss):
     def __init__(self, weight=None, gamma=2,reduction='mean'):
         super(FocalLoss, self).__init__(weight,reduction=reduction)
@@ -81,7 +85,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
     cnt = 0
     for epoch in range(args.epochs):
-        for batch_idx, (data, target) in enumerate(train_loader):
+        for batch_idx, (data, target, _) in enumerate(train_loader):
             # Get a batch of data
             data, target = data.to(args.device), target.to(args.device)
             optimizer.zero_grad()
@@ -136,3 +140,37 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
     ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
     return ap, map, fraction_correct
+
+def test(args, model, model_name='model', log_wandb=False):
+
+    val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', '/mnt/aidtr/external/coco/annotations/instances_val2017.json', args.inp_size)
+    test_loader = torch.utils.data.DataLoader(val_dataset,
+                                            batch_size=args.test_batch_size,
+                                            shuffle=False,
+                                            num_workers=4,)
+    print("length test loader : ", len(test_loader))
+    model.eval()
+    print(args.device)
+    model = model.to(args.device)
+
+    if log_wandb :
+        wandb.init(project="vlr-project-trained-class-predictor", reinit=True)
+
+    with torch.no_grad() : 
+        for batch_idx, (data, target, display_img) in enumerate(test_loader):
+            # Get a batch of data
+            data, target = data.to(args.device), target.to(args.device)
+            # Forward pass
+            output = model(data)
+
+            output = torch.argmax(output, dim=1)
+            target = torch.argmax(target, dim=1)
+
+            labels = val_dataset.class_to_label(output.cpu().numpy())
+            labels_gt = val_dataset.class_to_label(target.cpu().numpy())
+
+            if log_wandb :
+                caption_full = 'predicted class : ' + labels[0] + '\n gt class : ' + labels_gt[0]
+                img = wandb.Image(display_img[0], caption=caption_full)
+                # wandb.log({'image_{}'.format(batch_idx): img})
+                wandb.log({'image' : img})
