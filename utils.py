@@ -138,8 +138,11 @@ def eval_dataset_map(model, device, test_loader):
     gt = np.vstack((gt))
     pred = np.vstack((pred))
     valid = np.vstack((valid))
+
+    total_correct = np.sum(gt * pred)
+    fraction_correct = total_correct / len(gt)
             
     AP = compute_ap(gt, pred, valid)
 
     mAP = np.nanmean(AP)
-    return AP, mAP
+    return AP, mAP, fraction_correct

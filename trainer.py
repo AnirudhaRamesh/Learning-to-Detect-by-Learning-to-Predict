@@ -20,7 +20,9 @@ class FocalLoss(nn.modules.loss._WeightedLoss):
 
     def forward(self, input, target):
 
-        ce_loss = F.cross_entropy(input, target,reduction=self.reduction,weight=self.weight)
+        # ce_loss = F.cross_entropy(input, target,reduction=self.reduction,weight=self.weight)
+        # ce_loss = F.binary_cross_entropy_with_logits(input, target, reduction=self.reduction, weight=self.weight)
+        ce_loss = F.binary_cross_entropy_with_logits(input, target, reduction='sum', weight=self.weight)
         pt = torch.exp(-ce_loss)
         focal_loss = ((1 - pt) ** self.gamma * ce_loss).mean()
         return focal_loss
@@ -84,14 +86,13 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             data, target = data.to(args.device), target.to(args.device)
             optimizer.zero_grad()
             # Forward pass
-            print(data.shape)
             output = model(data)
             # Calculate the loss
             # TODO Q1.4: your loss for multi-label classification
 #             loss = F.cross_entropy(output, target)
 #             print(output.shape, target.shape)
-            # loss = focal_loss(output, target)
-            loss = bce_loss(output, target)
+            loss = focal_loss(output, target)
+            # loss = bce_loss(output, target)
             # Calculate gradient w.r.t the loss
             loss.backward()
             # Optimizer takes one step
@@ -103,19 +104,21 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
                 print('Train Epoch: {} [{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, cnt, 100. * batch_idx / len(train_loader), loss.item()))
                 # TODO Q3.2: Log histogram of gradients
-                for name, param in model.named_parameters():
+                # for name, param in model.named_parameters():
 #                     if 'bn' not in name:            
-                    writer.add_histogram('Weights/'+name, param, cnt)
-                    writer.add_histogram('Gradients/'+name, param.grad, cnt)
+                    # writer.add_histogram('Weights/'+name, param, cnt)
+                    # writer.add_histogram('Gradients/'+name, param.grad, cnt)
                         
             # Validation iteration
             if cnt % args.val_every == 0:
                 model.eval()
-                ap, map = utils.eval_dataset_map(model, args.device, test_loader)
+                ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
                 print('Val Epoch: {} [{} ({:.0f}%)]\map: {:.6f}'.format(
                     epoch, cnt, 100. * batch_idx / len(train_loader), map))
                 # TODO Q1.5: Log MAP to tensorboard
                 writer.add_scalar('MAP/test', map, cnt)
+                # writer.add_scalar('AP/test', torch.Tensor(ap), cnt)
+                writer.add_scalar('PercentageCorrect/test', fraction_correct * 100, cnt)
                 model.train()
             cnt += 1
 
@@ -129,6 +132,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             save_model(epoch, model_name, model)
 
     # Validation iteration
-    test_loader = utils.get_data_loader('voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
-    ap, map = utils.eval_dataset_map(model, args.device, test_loader)
-    return ap, map
+    # test_loader = utils.get_data_loader('voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
+
+    ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
+    return ap, map, fraction_correct
