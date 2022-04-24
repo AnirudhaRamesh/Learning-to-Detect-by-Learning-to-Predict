@@ -13,7 +13,7 @@ import torch
 import torch.nn as nn
 
 import torchvision.transforms as transforms
-
+from tqdm import tqdm
 import wandb
 
 class FocalLoss(nn.modules.loss._WeightedLoss):
@@ -61,9 +61,10 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
     #     'voc', train=True, batch_size=args.batch_size, split='trainval', inp_size=args.inp_size)
     # test_loader = utils.get_data_loader(
     #     'voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
+    # print(f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json")
 
-    train_dataset = CocoDataset('../coco/train2017', '../coco/annotations/instances_train2017.json', args.inp_size)
-    val_dataset = CocoDataset('../coco/val2017', '../coco/annotations/instances_val2017.json', args.inp_size)
+    train_dataset = CocoDataset('../coco/train2017', f"../coco/annotations/instances_train2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+    val_dataset = CocoDataset('../coco/val2017', f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
 
     bce_loss = torch.nn.BCEWithLogitsLoss()
 
@@ -85,7 +86,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
     cnt = 0
     for epoch in range(args.epochs):
-        for batch_idx, (data, target, _) in enumerate(train_loader):
+        for batch_idx, (data, target, _) in tqdm(enumerate(train_loader)):
             # Get a batch of data
             data, target = data.to(args.device), target.to(args.device)
             optimizer.zero_grad()
@@ -143,7 +144,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
 def test(args, model, model_name='model', log_wandb=False):
 
-    val_dataset = CocoDataset('../coco/val2017', '../coco/annotations/instances_val2017.json', args.inp_size)
+    val_dataset = CocoDataset('../coco/val2017', f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
     test_loader = torch.utils.data.DataLoader(val_dataset,
                                             batch_size=args.test_batch_size,
                                             shuffle=False,

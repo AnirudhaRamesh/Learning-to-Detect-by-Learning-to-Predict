@@ -7,7 +7,7 @@ from PIL import Image
 from pycocotools.coco import COCO
 
 class CocoDataset(torch.utils.data.Dataset):
-    def __init__(self, root, annotation, size):
+    def __init__(self, root, annotation, size, indoor_only=False):
         self.root = root
         # self.transforms = torchvision.transforms.Compose([
         #     torchvision.transforms.ToTensor(),
@@ -116,6 +116,7 @@ class CocoDataset(torch.utils.data.Dataset):
             89: 'hair drier',
             90: 'toothbrush'
         }
+        self.indoor_only = indoor_only
 
 
     def __getitem__(self, index):
@@ -124,8 +125,10 @@ class CocoDataset(torch.utils.data.Dataset):
         # Image ID
         img_id = self.ids[index]
         # List: get annotation id from coco
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        # ann_ids = coco.getAnnIds(imgIds=img_id, catIds=coco.getCatIds(supNms=["indoor", "kitchen"]))
+        if not self.indoor_only:
+            ann_ids = coco.getAnnIds(imgIds=img_id)
+        else:
+            ann_ids = coco.getAnnIds(imgIds=img_id, catIds=coco.getCatIds(supNms=["indoor", "kitchen"]))
         # print(ann_ids)
         # Dictionary: target coco_annotation file for an image
         coco_annotation = coco.loadAnns(ann_ids)
@@ -176,7 +179,11 @@ class CocoDataset(torch.utils.data.Dataset):
             labels = labels[box_id] - 1 # Shift labels to 0-index
             
             #Make labels one-hot
-            one_hot = torch.zeros(90)
+            if not self.indoor_only:
+                one_hot = torch.zeros(90)
+            else:
+                one_hot = torch.zeros(14)
+
             one_hot[labels] = 1.
             labels = one_hot
 
@@ -184,7 +191,10 @@ class CocoDataset(torch.utils.data.Dataset):
             img = self.white_out_image(img, boxes)
             img_disp = self.white_out_image(img, boxes)
         else : 
-            one_hot = torch.zeros(90)
+            if not self.indoor_only:
+                one_hot = torch.zeros(90)
+            else:
+                one_hot = torch.zeros(14)
             labels = one_hot
 
         # Annotation is in dictionary format
