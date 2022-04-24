@@ -24,11 +24,11 @@ if USE_SAVED_MODEL == False :
     model.fc = nn.Linear(2048,num_classes)
 else : 
     model = ResNet()
-    model.fc = nn.Linear(2048,90)
+    model.fc = nn.Linear(2048,num_classes)
     print("Loading model....")
     model.load_state_dict(torch.load(SAVED_MODEL_PATH))
-    if num_classes == 14:
-        model.fc = nn.Linear(2048,num_classes)
+    # if num_classes == 14:
+        # model.fc = nn.Linear(2048,num_classes)
 
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
