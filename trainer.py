@@ -15,6 +15,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from tqdm import tqdm
 import wandb
+import os
 
 class FocalLoss(nn.modules.loss._WeightedLoss):
     def __init__(self, weight=None, gamma=2,reduction='mean'):
@@ -61,11 +62,18 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
     #     'voc', train=True, batch_size=args.batch_size, split='trainval', inp_size=args.inp_size)
     # test_loader = utils.get_data_loader(
     #     'voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
-    # print(f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json")
+    # print(f"/mnt/aidtr/external/coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json")
 
-    train_dataset = CocoDataset('../coco/train2017', f"../coco/annotations/instances_train2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
-    val_dataset = CocoDataset('../coco/val2017', f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
-
+    try:
+        train_dataset = CocoDataset('/mnt/aidtr/external/coco/train2017', f"/mnt/aidtr/external/coco/annotations/instances_train2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+        val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', f"/mnt/aidtr/external/coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+    except:
+        print("You don't have the indoor annotated dataset ready, preparing it for you! ... . . . .. ")
+        os.system("python filter.py --input_json /mnt/aidtr/external/coco/annotations/instances_val2017.json --output_json /mnt/aidtr/external/coco/annotations/instances_val2017indoor.json --categories book clock vase scissors 'teddy bear' 'hair drier' toothbrush bottle 'wine glass' cup fork knife spoon bowl")
+        os.system("python filter.py --input_json /mnt/aidtr/external/coco/annotations/instances_train2017.json --output_json /mnt/aidtr/external/coco/annotations/instances_train2017indoor.json --categories book clock vase scissors 'teddy bear' 'hair drier' toothbrush bottle 'wine glass' cup fork knife spoon bowl")
+        train_dataset = CocoDataset('/mnt/aidtr/external/coco/train2017', f"/mnt/aidtr/external/coco/annotations/instances_train2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+        val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', f"/mnt/aidtr/external/coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+    
     bce_loss = torch.nn.BCEWithLogitsLoss()
 
     # own DataLoader
@@ -144,7 +152,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
 
 def test(args, model, model_name='model', log_wandb=False):
 
-    val_dataset = CocoDataset('../coco/val2017', f"../coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
+    val_dataset = CocoDataset('/mnt/aidtr/external/coco/val2017', f"/mnt/aidtr/external/coco/annotations/instances_val2017{'indoor' if args.indoor_only else ''}.json", args.inp_size, args.indoor_only)
     test_loader = torch.utils.data.DataLoader(val_dataset,
                                             batch_size=args.test_batch_size,
                                             shuffle=False,
