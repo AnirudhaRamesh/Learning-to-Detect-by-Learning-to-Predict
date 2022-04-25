@@ -47,6 +47,8 @@ class ARGS(object):
     use_cuda = False
     # input size
     inp_size = 224
+    # indoor only flag implies 14 class classification
+    indoor_only=False
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -124,13 +126,14 @@ def eval_dataset_map(model, device, test_loader):
     sig = torch.nn.Sigmoid()
     with torch.no_grad():
         gt, pred, valid = [],[],[]
-        for data, target in test_loader:
+        for data, target, _ in test_loader:
             # TODO Q1.3: insert your code here
             data = data.to(device)
             pred_sample = sig(model(data))
             pred_sample = pred_sample.cpu()
             gt_sample = target
-            valid_sample = torch.ones(target.shape[0])
+            # print("Target shape is: ", target.shape)
+            valid_sample = torch.ones(target.shape[1])
             gt.append(gt_sample)
             pred.append(pred_sample)
             valid.append(valid_sample)
