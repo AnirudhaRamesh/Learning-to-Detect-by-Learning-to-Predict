@@ -93,6 +93,7 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
     model = model.to(args.device)
 
     cnt = 0
+    best = -1
     for epoch in range(args.epochs):
         for batch_idx, (data, target, _) in tqdm(enumerate(train_loader)):
             # Get a batch of data
@@ -126,9 +127,13 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             if cnt % args.val_every == 0:
                 model.eval()
                 ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
-                print('Val Epoch: {} [{} ({:.0f}%)]\map: {:.6f}'.format(
-                    epoch, cnt, 100. * batch_idx / len(train_loader), map))
+                print('Val Epoch: {} [{} ({:.0f}%)]\map: {:.6f} | acc: {:.6f}'.format(
+                    epoch, cnt, 100. * batch_idx / len(train_loader), map, fraction_correct))
                 # TODO Q1.5: Log MAP to tensorboard
+                if best < map:
+                    save_model(0, "best_" + model_name, model)
+                    best = map
+                    print("Saving best model...")
                 writer.add_scalar('MAP/test', map, cnt)
                 # writer.add_scalar('AP/test', torch.Tensor(ap), cnt)
                 writer.add_scalar('PercentageCorrect/test', fraction_correct * 100, cnt)
@@ -141,8 +146,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             writer.add_scalar('LearningRate/lr', scheduler.state_dict()['_last_lr'][0], cnt)
 
         # save model
-        if save_this_epoch(args, epoch):
-            save_model(epoch, model_name, model)
+        # if save_this_epoch(args, epoch):
+            # save_model(epoch, model_name, model)
 
     # Validation iteration
     # test_loader = utils.get_data_loader('voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
