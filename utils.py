@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import sklearn.metrics
 from torch.utils.data import DataLoader
-
+from tqdm import tqdm
 
 class ARGS(object):
     """
@@ -126,7 +126,7 @@ def eval_dataset_map(model, device, test_loader):
     sig = torch.nn.Sigmoid()
     with torch.no_grad():
         gt, pred, valid = [],[],[]
-        for data, target, _ in test_loader:
+        for data, target, _ in tqdm(test_loader):
             # TODO Q1.3: insert your code here
             data = data.to(device)
             pred_sample = sig(model(data))

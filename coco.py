@@ -13,7 +13,9 @@ class CocoDataset(torch.utils.data.Dataset):
         #     torchvision.transforms.ToTensor(),
         # ])
         self.inp_size = size
-        self.transforms = transforms.Compose([
+        if "val" not in annotation:
+            print("train")
+            self.transforms = transforms.Compose([
                                transforms.Resize(self.inp_size), 
                                transforms.RandomCrop(self.inp_size), 
                                transforms.RandomHorizontalFlip(),
@@ -24,7 +26,17 @@ class CocoDataset(torch.utils.data.Dataset):
                                    mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225]
                                )
-            ]) 
+                ]) 
+        else:
+            self.transforms = transforms.Compose([
+                               transforms.Resize(self.inp_size),
+                               transforms.CenterCrop(self.inp_size), 
+                               transforms.ToTensor(),
+                               transforms.Normalize(
+                                   mean=[0.485, 0.456, 0.406],
+                                   std=[0.229, 0.224, 0.225]
+                               )
+                ]) 
         self.disp_transforms = transforms.Compose([
                                 transforms.Resize(self.inp_size),
                                 transforms.RandomCrop(self.inp_size),
@@ -135,7 +147,10 @@ class CocoDataset(torch.utils.data.Dataset):
     def white_out_image(self, img, box) :
         
         img = torchvision.transforms.ToTensor()(img)
-        img[:, int(box[1]) : int(box[3]), int(box[0]) : int(box[2])] = 0
+        # print("Im back in the white")
+        # print(torch.max(img), torch.min(img))
+        img[:, int(box[1]) : int(box[3]), int(box[0]) : int(box[2])] = 1.0
+        # print(torch.max(img), torch.min(img))
         img = torchvision.transforms.ToPILImage()(img)
 
         return img

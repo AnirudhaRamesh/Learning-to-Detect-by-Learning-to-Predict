@@ -146,8 +146,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             writer.add_scalar('LearningRate/lr', scheduler.state_dict()['_last_lr'][0], cnt)
 
         # save model
-        # if save_this_epoch(args, epoch):
-            # save_model(epoch, model_name, model)
+        if save_this_epoch(args, epoch):
+            save_model(epoch, model_name, model)
 
     # Validation iteration
     # test_loader = utils.get_data_loader('voc', train=False, batch_size=args.test_batch_size, split='test', inp_size=args.inp_size)
@@ -188,3 +188,7 @@ def test(args, model, model_name='model', log_wandb=False):
                 img = wandb.Image(display_img[0], caption=caption_full)
                 # wandb.log({'image_{}'.format(batch_idx): img})
                 wandb.log({'image' : img})
+        
+        model.eval()
+        ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
+        print('Val Test\map: {:.6f} | acc: {:.6f}'.format(map, fraction_correct))
