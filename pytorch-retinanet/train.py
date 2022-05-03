@@ -38,7 +38,8 @@ def main(args=None):
     parser.add_argument('--custom_model', type=bool, default=False)
     parser.add_argument('--model_name', type=str, default='trial')
     parser.add_argument('--log', action='store_true')
-    parser.add_argument('--custom_model_path', type=str, default='/mnt/aidtr/members/aramesh/VLR-Project/checkpoints/pretrained_resnet_coco_focalloss_losssum_epoch50_plus/checkpoint-pretrained_resnet_coco_focalloss_epochplus50-epoch50.pth')
+    parser.add_argument('--log_iteration', type=int, default=100)
+    parser.add_argument('--custom_model_path', type=str, default='/mnt/aidtr/members/aramesh/VLR-Project/checkpoints/checkpoint-pretrained_resnet_coco_whiteoutforreal_res50_forretinanet-epoch50.pth')
     parser.add_argument('--custom_model_numclasses', type=int, default=90)
     parser.add_argument('--indoor_only', type=bool, default=False)
 
@@ -181,6 +182,7 @@ def main(args=None):
         epoch_loss = []
 
         for iter_num, data in enumerate(dataloader_train):
+
             try:
                 optimizer.zero_grad()
 
@@ -211,7 +213,7 @@ def main(args=None):
                     'Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
                         epoch_num, iter_num, float(classification_loss), float(regression_loss), np.mean(loss_hist)))
 
-                if parser.log : 
+                if parser.log and (iter_num % parser.log_iteration == 0) : 
                     wandb.log({'epoch' : epoch_num, 'iteration' : iter_num, 'classification loss' : float(classification_loss),
                     'reg loss' : float(regression_loss), 'running loss' : np.mean(loss_hist)})
 
@@ -225,8 +227,14 @@ def main(args=None):
 
             print('Evaluating dataset')
 
-            coco_eval.evaluate_coco(dataset_val, retinanet)
+            eval_stats = coco_eval.evaluate_coco(dataset_val, retinanet)
+            print('AP : {}, AP50 : {}, AP75 : {}, APSmall : {}, APMedium : {}, APLarge : {}, AR100All :{} '.format(eval_stats[0],
+            eval_stats[1], eval_stats[2], eval_stats[3], eval_stats[4], eval_stats[5],eval_stats[8] ))
 
+            if parser.log : 
+                wandb.log({'val/epoch' : epoch_num, 'val/AP' : eval_stats[0], 'val/AP50' : eval_stats[1], 'val/AP75' : eval_stats[2],
+                    'val/APSmall' : eval_stats[3], 'val/APMedium' : eval_stats[4], 'val/APLarge' : eval_stats[5], 'val/AR100all' : eval_stats[8]})
+                    
         elif parser.dataset == 'csv' and parser.csv_val is not None:
 
             print('Evaluating dataset')

@@ -8,12 +8,12 @@ from utils import ARGS
 ResNet = models.resnet50
 
 USE_SAVED_MODEL = True
-SAVED_MODEL_PATH = 'checkpoints/checkpoint-best_pretrained_resnet_coco_whiteoutforreal_res50-epoch1.pth'
+SAVED_MODEL_PATH = 'checkpoints/checkpoint-pretrained_resnet_coco_whiteoutforreal_res50_forretinanet-epoch50.pth'
 
 # args = ARGS(epochs=15, batch_size=16, lr=0.001, inp_size=360, use_cuda=True, val_every=2000, save_at_end=True, save_freq=5, step_size=10, gamma=0.1)
 args = ARGS(epochs=50, batch_size=16, lr=0.00001, inp_size=360, use_cuda=True, 
             val_every=2000, save_at_end=True, save_freq=1, step_size=40, gamma=0.1, 
-            test_batch_size=10, indoor_only=False)
+            test_batch_size=100, indoor_only=False)
 if args.indoor_only:
     num_classes = 14
 else:
@@ -34,5 +34,5 @@ else :
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 print("num_classes: ", num_classes)
-test_ap, test_map, test_fraction_correct = trainer.train(args, model, optimizer, scheduler, 'pretrained_resnet_coco_whiteoutforreal_res50_resume')
-# trainer.test(args, model, 'test', log_wandb=False)
+# test_ap, test_map, test_fraction_correct = trainer.train(args, model, optimizer, scheduler, 'pretrained_resnet_coco_whiteoutforreal_res50_forretinanet')
+trainer.test(args, model, 'test', log_wandb=False)

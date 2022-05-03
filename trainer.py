@@ -126,7 +126,10 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             # Validation iteration
             if cnt % args.val_every == 0:
                 model.eval()
-                ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
+                
+                with torch.no_grad(): 
+                    ap, map, fraction_correct = utils.eval_dataset_map(model, args.device, test_loader)
+
                 print('Val Epoch: {} [{} ({:.0f}%)]\map: {:.6f} | acc: {:.6f}'.format(
                     epoch, cnt, 100. * batch_idx / len(train_loader), map, fraction_correct))
                 # TODO Q1.5: Log MAP to tensorboard
