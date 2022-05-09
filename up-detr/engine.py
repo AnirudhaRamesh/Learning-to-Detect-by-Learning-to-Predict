@@ -18,12 +18,19 @@ import torch
 import util.misc as utils
 from datasets.coco_eval import CocoEvaluator
 from datasets.panoptic_eval import PanopticEvaluator
+<<<<<<< HEAD
 import wandb
+=======
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
+<<<<<<< HEAD
                     device: torch.device, epoch: int, max_norm: float = 0, logger =wandb):
+=======
+                    device: torch.device, epoch: int, max_norm: float = 0):
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
     model.train()
     criterion.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -33,9 +40,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     print_freq = 10
     # for up-detr samples consist of images and patches
     # it also supports detr training, when samples are only images
+<<<<<<< HEAD
     iter = 0
     for *samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         iter+=1
+=======
+    for *samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
         samples = [item.to(device) for item in samples]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
@@ -52,10 +63,15 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                                     for k, v in loss_dict_reduced.items() if k in weight_dict}
         losses_reduced_scaled = sum(loss_dict_reduced_scaled.values())
 
+<<<<<<< HEAD
 
         loss_value = losses_reduced_scaled.item()
         if iter % print_freq:
             logger.log({'epoch' : epoch, 'iteration' : iter, 'train loss' : loss_value,})
+=======
+        loss_value = losses_reduced_scaled.item()
+
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
             print(loss_dict_reduced)

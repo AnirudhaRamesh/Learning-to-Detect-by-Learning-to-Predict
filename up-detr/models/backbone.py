@@ -97,6 +97,7 @@ class Backbone(BackboneBase):
     def __init__(self, name: str,
                  train_backbone: bool,
                  return_interm_layers: bool,
+<<<<<<< HEAD
                  dilation: bool,
                  custom_model_path = ""):
         backbone = getattr(torchvision.models, name)(
@@ -114,6 +115,16 @@ class Backbone(BackboneBase):
             checkpoint = torch.load(custom_model_path,map_location="cpu")
             state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items() if "fc" not in k}
             # print(state_dict)
+=======
+                 dilation: bool):
+        backbone = getattr(torchvision.models, name)(
+            replace_stride_with_dilation=[False, False, dilation],
+            pretrained=False, norm_layer=FrozenBatchNorm2d)
+        # load the SwAV pre-training model from the url instead of supervised pre-training model
+        if name == 'resnet50':
+            checkpoint = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar',map_location="cpu")
+            state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items()}
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
             backbone.load_state_dict(state_dict, strict=False)
         num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
@@ -144,7 +155,11 @@ def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
+<<<<<<< HEAD
     backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.custom_model_path)
+=======
+    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation)
+>>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
