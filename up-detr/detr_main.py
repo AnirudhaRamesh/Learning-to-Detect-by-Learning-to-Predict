@@ -21,10 +21,7 @@ import util.misc as utils
 from datasets import build_dataset, get_coco_api_from_dataset
 from engine import evaluate, train_one_epoch
 from models import build_model
-<<<<<<< HEAD
 import wandb
-=======
->>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
 
 
 def get_args_parser():
@@ -37,10 +34,7 @@ def get_args_parser():
     parser.add_argument('--lr_drop', default=200, type=int)
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
-<<<<<<< HEAD
     parser.add_argument('--model_name', type=str, default='trial')
-=======
->>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
 
     # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
@@ -114,11 +108,8 @@ def get_args_parser():
                         help='number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--pretrain', default='', help='initialized from the pre-training model')
-<<<<<<< HEAD
     parser.add_argument('--custom_model_path', type=str, default='')
 
-=======
->>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
     return parser
 
 
@@ -221,25 +212,12 @@ def main(args):
         return
 
     print("Start training")
-<<<<<<< HEAD
     wandb.init(project="vlr-project-updter-{}".format(args.model_name), reinit=True)
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
         if args.output_dir:
             checkpoint_paths = [output_dir / f'checkpoint_e_{epoch:04}_{args.model_name}.pth']
-=======
-    start_time = time.time()
-    for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            sampler_train.set_epoch(epoch)
-        train_stats = train_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch,
-            args.clip_max_norm)
-        lr_scheduler.step()
-        if args.output_dir:
-            checkpoint_paths = [output_dir / 'checkpoint.pth']
->>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
             # extra checkpoint before LR drop and every 100 epochs
             if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % 100 == 0:
                 checkpoint_paths.append(output_dir / f'checkpoint{epoch:04}.pth')
@@ -251,15 +229,12 @@ def main(args):
                     'epoch': epoch,
                     'args': args,
                 }, checkpoint_path)
-<<<<<<< HEAD
         if args.distributed:
             sampler_train.set_epoch(epoch)
         train_stats = train_one_epoch(
             model, criterion, data_loader_train, optimizer, device, epoch,
             args.clip_max_norm, logger = wandb)
         lr_scheduler.step()
-=======
->>>>>>> 04170e96db7ec5e42c5f60ccf1f746e6ba28821b
 
         test_stats, coco_evaluator = evaluate(
             model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
