@@ -115,6 +115,7 @@ def main(args=None):
     # if parser.custom_model  : 
     #     retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True)
     # else : 
+    print("NUM CLASSES: ", dataset_train.num_classes())
     if parser.depth == 18:
         retinanet = model.resnet18(num_classes=dataset_train.num_classes(), pretrained=True)
     elif parser.depth == 34:
@@ -130,9 +131,10 @@ def main(args=None):
 
     if parser.custom_model :
         pretrained_custom_model = models_tv.resnet50
-        pcm = pretrained_custom_model()
+        pcm = pretrained_custom_model(pretrained=True)
         pcm.fc = torch.nn.Linear(2048,parser.custom_model_numclasses)
-        pcm.load_state_dict(torch.load(parser.custom_model_path))
+        print("YOU ARE NOT LOADING IN THE CUSTOM MODEL JUST USING PRETRAINED RESNET")
+        # pcm.load_state_dict(torch.load(parser.custom_model_path))
 
         params1 = retinanet.named_parameters()
         params2 = pcm.named_parameters()
@@ -157,6 +159,7 @@ def main(args=None):
         retinanet = torch.nn.DataParallel(retinanet).cuda()
     else:
         retinanet = torch.nn.DataParallel(retinanet)
+
 
     retinanet.training = True
 
@@ -252,3 +255,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+# buzz lightning bingo supreme 786 741
+
