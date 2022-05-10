@@ -16,13 +16,17 @@ def main(args=None):
 
     parser.add_argument('--coco_path', help='Path to COCO directory')
     parser.add_argument('--model_path', help='Path to model', type=str)
+    parser.add_argument('--indoor_only', type=bool, default=False)
 
     parser = parser.parse_args(args)
 
     dataset_val = CocoDataset(parser.coco_path, set_name='val2017',
-                              transform=transforms.Compose([Normalizer(), Resizer()]))
+                              transform=transforms.Compose([Normalizer(), Resizer()]),
+                              indoor_only=parser.indoor_only)
 
     # Create the model
+    print("NUM CLASSES: ", dataset_val.num_classes())
+    
     retinanet = model.resnet50(num_classes=dataset_val.num_classes(), pretrained=True)
 
     use_gpu = True
