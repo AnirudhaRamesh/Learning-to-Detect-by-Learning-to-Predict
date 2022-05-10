@@ -109,6 +109,7 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--pretrain', default='', help='initialized from the pre-training model')
     parser.add_argument('--custom_model_path', type=str, default='')
+    parser.add_argument('--fused', action="store_true")
 
     return parser
 

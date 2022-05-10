@@ -63,7 +63,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 class BackboneBase(nn.Module):
 
-    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool, backbone_ours = None):
         super().__init__()
         for name, parameter in backbone.named_parameters():
             if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
@@ -73,7 +73,12 @@ class BackboneBase(nn.Module):
         else:
             return_layers = {'layer4': "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        self.num_channels = num_channels
+        if backbone_ours is not None:
+            self.body_ours = IntermediateLayerGetter(backbone_ours, return_layers=return_layers)
+            self.num_channels = 2*num_channels
+        else:
+            self.backbone_ours = None
+            self.num_channels = num_channels
 
     def forward(self, tensor_list):
         """supports both NestedTensor and torch.Tensor
@@ -88,6 +93,20 @@ class BackboneBase(nn.Module):
                 out[name] = NestedTensor(x, mask)
         else:
             out = self.body(tensor_list)
+        if self.backbone_ours is not None:
+            if isinstance(tensor_list, NestedTensor):
+                xs = self.body_ours(tensor_list.tensors)
+                out_ours: Dict[str, NestedTensor] = {}
+                for name, x in xs.items():
+                    m = tensor_list.mask
+                    assert m is not None
+                    mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
+                    out_ours[name] = NestedTensor(x, mask)
+            else:
+                out_ours = self.body_ours(tensor_list)
+            print("expecting that out shape: ", out.shape, " and out_ours.shape: ", out_ours.shape, " are the same and should be concatenated alon the channels")
+            out = torch.cat([out, out_ours], dim=1)
+            print("concatted out is: ", out.shape)
         return out
 
 
@@ -98,25 +117,48 @@ class Backbone(BackboneBase):
                  train_backbone: bool,
                  return_interm_layers: bool,
                  dilation: bool,
-                 custom_model_path = ""):
+                 custom_model_path = "",
+                 fused = False):
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
             pretrained=True, norm_layer=FrozenBatchNorm2d)
         # load the SwAV pre-training model from the url instead of supervised pre-training model
-        if custom_model_path == '':
-            print("Basic pretrained resnet")
-            # checkpoint = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar',map_location="cpu")
-            # state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items()}
-            # backbone.load_state_dict(state_dict, strict=False)
-            pass
-        else:
+        if fused:
+            print("BE FUSION")
+            print("swaV model")
+
+            checkpoint = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar',map_location="cpu")
+            state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items()}
+            backbone.load_state_dict(state_dict, strict=False)
+
+            backbone_ours = getattr(torchvision.models, name)(
+            replace_stride_with_dilation=[False, False, dilation],
+            pretrained=True, norm_layer=FrozenBatchNorm2d)
             print("LOADING OUR SAVED MODELLLLLL!!!!!!\n\n\n\n", custom_model_path)
+            if custom_model_path == "":
+                print("Who do you who do you think you are no custome model path but specifiying fuse?")
+                raise Error
             checkpoint = torch.load(custom_model_path,map_location="cpu")
             state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items() if "fc" not in k}
             # print(state_dict)
-            backbone.load_state_dict(state_dict, strict=False)
-        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
-        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+            backbone_ours.load_state_dict(state_dict, strict=False)
+
+            super().__init__(backbone, train_backbone, num_channels, return_interm_layers, backbone_ours)
+        else:
+            if custom_model_path == '':
+                print("Basic pretrained resnet")
+                # checkpoint = torch.hub.load_state_dict_from_url('https://dl.fbaipublicfiles.com/deepcluster/swav_800ep_pretrain.pth.tar',map_location="cpu")
+                # state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items()}
+                # backbone.load_state_dict(state_dict, strict=False)
+                pass
+            else:
+                print("LOADING OUR SAVED MODELLLLLL!!!!!!\n\n\n\n", custom_model_path)
+                checkpoint = torch.load(custom_model_path,map_location="cpu")
+                state_dict = {k.replace("module.", ""): v for k, v in checkpoint.items() if "fc" not in k}
+                # print(state_dict)
+                backbone.load_state_dict(state_dict, strict=False)
+            num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
+            super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
 
 class Joiner(nn.Sequential):
@@ -144,7 +186,7 @@ def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
-    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.custom_model_path)
+    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation, args.custom_model_path, args.fused)
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
