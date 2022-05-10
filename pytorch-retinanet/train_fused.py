@@ -7,7 +7,7 @@ import torch
 import torch.optim as optim
 from torchvision import transforms
 
-from retinanet import model
+from retinanet import fused_model as model
 from retinanet.dataloader import CocoDataset, CSVDataset, collater, Resizer, AspectRatioBasedSampler, Augmenter, \
     Normalizer
 from torch.utils.data import DataLoader
@@ -35,14 +35,12 @@ def main(args=None):
     parser.add_argument('--epochs', help='Number of epochs', type=int, default=100)
     parser.add_argument('--load_retina_path', type=str, default=None)
 
-    parser.add_argument('--custom_model', type=bool, default=False)
     parser.add_argument('--model_name', type=str, default='trial')
     parser.add_argument('--log', action='store_true')
     parser.add_argument('--log_iteration', type=int, default=100)
     parser.add_argument('--custom_model_path', type=str, default='/mnt/aidtr/members/aramesh/VLR-Project/checkpoints/checkpoint-pretrained_resnet_coco_whiteoutforreal_res50_forretinanet-epoch50.pth')
     parser.add_argument('--custom_model_numclasses', type=int, default=90)
     parser.add_argument('--indoor_only', type=bool, default=False)
-    parser.add_argument('--fused_resnet', action="store_true")
 
     parser = parser.parse_args(args)
 
@@ -51,28 +49,6 @@ def main(args=None):
 
         if parser.coco_path is None:
             raise ValueError('Must provide --coco_path when training on COCO,')
-
-        # tf_train = transforms.Compose([
-        #                        transforms.Resize(self.inp_size), 
-        #                        transforms.RandomCrop(self.inp_size), 
-        #                        transforms.RandomHorizontalFlip(),
-        #                        transforms.RandomRotation(10), # Include for resnet
-        #                        transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.1),
-        #                        transforms.ToTensor(),
-        #                        transforms.Normalize(
-        #                            mean=[0.485, 0.456, 0.406],
-        #                            std=[0.229, 0.224, 0.225]
-        #                        )
-        #         ]) 
-        # tf_val = transforms.Compose([
-        #                        transforms.Resize(self.inp_size),
-        #                        transforms.CenterCrop(self.inp_size), 
-        #                        transforms.ToTensor(),
-        #                        transforms.Normalize(
-        #                            mean=[0.485, 0.456, 0.406],
-        #                            std=[0.229, 0.224, 0.225]
-        #                        )
-        #         ]) 
 
         print("indoor only: ", parser.indoor_only)
         dataset_train = CocoDataset(parser.coco_path, set_name='train2017',
@@ -116,13 +92,12 @@ def main(args=None):
     # if parser.custom_model  : 
     #     retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True)
     # else : 
-    print("NUM CLASSES: ", dataset_train.num_classes())
     if parser.depth == 18:
         retinanet = model.resnet18(num_classes=dataset_train.num_classes(), pretrained=True)
     elif parser.depth == 34:
         retinanet = model.resnet34(num_classes=dataset_train.num_classes(), pretrained=True)
     elif parser.depth == 50:
-        retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True, custom_model=parser.custom_model)
+        retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True)
     elif parser.depth == 101:
         retinanet = model.resnet101(num_classes=dataset_train.num_classes(), pretrained=True)
     elif parser.depth == 152:
@@ -130,21 +105,23 @@ def main(args=None):
     else:
         raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
 
-    if parser.custom_model :
-        pretrained_custom_model = models_tv.resnet50
-        pcm = pretrained_custom_model(pretrained=True)
-        pcm.fc = torch.nn.Linear(2048,parser.custom_model_numclasses)
-        print("YOU ARE NOT LOADING IN THE CUSTOM MODEL JUST USING PRETRAINED RESNET")
-        # pcm.load_state_dict(torch.load(parser.custom_model_path))
 
-        params1 = retinanet.named_parameters()
-        params2 = pcm.named_parameters()
+    # Load both imagenet pretrained resnet, and custom-prediction resnet
+    pretrained_custom_model = models_tv.resnet50
+    pcm = pretrained_custom_model()
+    pcm.fc = torch.nn.Linear(2048,parser.custom_model_numclasses)
+    pcm.load_state_dict(torch.load(parser.custom_model_path))
 
-        dict_params1 = dict(params1)
+    params1 = retinanet.named_parameters()
+    params2 = pcm.named_parameters()
 
-        for name, p2 in params2 : 
-            if name in dict_params1 : 
-                dict_params1[name].data.copy_(p2.data)
+    dict_params1 = dict(params1)
+
+    for name, p2 in params2 : 
+        temp_name = name.split('.')[0] + '_custom.' + '.'.join(name.split('.')[1:])
+        if temp_name in dict_params1 : 
+            dict_params1[temp_name].data.copy_(p2.data)
+            print(name, temp_name)
 
     if parser.load_retina_path is not None:
         print("Loading retina net model from: ", parser.load_retina_path)
@@ -160,7 +137,6 @@ def main(args=None):
         retinanet = torch.nn.DataParallel(retinanet).cuda()
     else:
         retinanet = torch.nn.DataParallel(retinanet)
-
 
     retinanet.training = True
 
@@ -256,6 +232,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-# buzz lightning bingo supreme 786 741
-
