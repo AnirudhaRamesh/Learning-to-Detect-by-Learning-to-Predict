@@ -42,7 +42,6 @@ def main(args=None):
     parser.add_argument('--custom_model_path', type=str, default='/mnt/aidtr/members/aramesh/VLR-Project/checkpoints/checkpoint-pretrained_resnet_coco_whiteoutforreal_res50_forretinanet-epoch50.pth')
     parser.add_argument('--custom_model_numclasses', type=int, default=90)
     parser.add_argument('--indoor_only', type=bool, default=False)
-    parser.add_argument('--fused_resnet', action="store_true")
 
     parser = parser.parse_args(args)
 

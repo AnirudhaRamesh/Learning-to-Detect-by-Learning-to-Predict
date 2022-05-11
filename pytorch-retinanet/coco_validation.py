@@ -36,7 +36,10 @@ def main(args=None):
             retinanet = retinanet.cuda()
 
     if torch.cuda.is_available():
+<<<<<<< Updated upstream
         # print(torch.load(parser.model_path))
+=======
+>>>>>>> Stashed changes
         # retinanet.load_state_dict(torch.load(parser.model_path))
         retinanet = torch.load(parser.model_path)
         retinanet = torch.nn.DataParallel(retinanet).cuda()
