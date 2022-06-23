@@ -1,5 +1,4 @@
-# VLR-Project
-Detection by Learning to Predict!
+# Detection by Learning to Predict!*
 
 This repository contains our code used in our VLR project, Spring 2022.
 Please take a look at our accompanying report :
@@ -32,3 +31,9 @@ Uncomment the last line in the `train_baseline_classifier.py` file, and comment 
 Kindly visit our website above for details for the object detection performance on RetinaNet and UP-DETR.
 
 ### To Train, Test, and Visualize retinanet and updetr, please look at their corresponding readmes.
+
+
+
+
+
+*This project was done toward completion of the course Visual Learning and Recognition (16-824) in Sprint 2022 at Carnegie Mellon University
