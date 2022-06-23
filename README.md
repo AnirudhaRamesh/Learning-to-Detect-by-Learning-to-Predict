@@ -36,4 +36,4 @@ Kindly visit our website above for details for the object detection performance 
 
 
 
-*This project was done toward completion of the course Visual Learning and Recognition (16-824) in Sprint 2022 at Carnegie Mellon University
+*This project was done toward completion of the course Visual Learning and Recognition (16-824) in Spring 2022 at Carnegie Mellon University
